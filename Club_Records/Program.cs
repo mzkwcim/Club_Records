@@ -104,8 +104,6 @@ class DataConversion
                 default:
                     return "";
             }
-
-
         }
     }
     public static string StrokeTranslation(string distance)
@@ -135,8 +133,7 @@ class DataConversion
     }
     public static string ToTitleString(string fullname)
     {
-        fullname.Replace(",", "");
-        string[] dividedFullName = fullname.Split(' ');
+        string[] dividedFullName = fullname.Replace(",", "").Split(' ');
         string[] newFullName = new string[dividedFullName.Length];
         for (int i = 0; i < dividedFullName.Length; i++)
         {
@@ -150,7 +147,6 @@ class DataConversion
         string newFullName2 = string.Join(" ", newFullName);
         return newFullName2;
     }
-    
 }
 class HtmlGetter
 {
@@ -188,18 +184,11 @@ class HtmlGetter
         var city = (htmlDocument.DocumentNode.SelectNodes("//td[@class='city']"));
         for (int i = 0; i < distance.Count; i++)
         {
-            try
-            {
-                distances.Add(distance[i].InnerText);
-                fullnames.Add(fullname[i].InnerText);
-                times.Add(time[i].InnerText);
-                dates.Add(date[i].InnerText);
-                cities.Add(city[i].InnerText);
-            }
-            catch
-            {
-
-            }
+            distances.Add(distance[i].InnerText);
+            fullnames.Add(fullname[i].InnerText);
+            times.Add(time[i].InnerText);
+            dates.Add(date[i].InnerText);
+            cities.Add(city[i].InnerText);
         }
         if (counter > 11)
         {
@@ -209,39 +198,51 @@ class HtmlGetter
             List<string> youngerdates = new List<string>();
             List<string> youngercities = new List<string>();
             var youngerhtmlDocument = Loader(YoungerUrl(dystans));
+            Console.WriteLine(YoungerUrl(dystans));
             var youngerDistance = youngerhtmlDocument.DocumentNode.SelectNodes("//td[@class='swimstyle']");
+            Console.WriteLine(youngerDistance[0].InnerText);
             var youngerFullName = youngerhtmlDocument.DocumentNode.SelectNodes("//td[@class='fullname']");
             var youngerTime = youngerhtmlDocument.DocumentNode.SelectNodes("//td[@class='time']");
             var youngerDate = youngerhtmlDocument.DocumentNode.SelectNodes("//td[@class='date']");
             var youngerCity = youngerhtmlDocument.DocumentNode.SelectNodes("//td[@class='city']");
-            for (int i = 0; i < youngerdistances.Count; i++)
+            for (int i = 0; i < youngerDistance.Count; i++)
             {
                 youngerdistances.Add(youngerDistance[i].InnerText);
                 youngerfullnames.Add(youngerFullName[i].InnerText);
                 youngertimes.Add(youngerTime[i].InnerText);
                 youngerdates.Add(youngerDate[i].InnerText);
                 youngercities.Add(youngerCity[i].InnerText);
+                Console.WriteLine(youngerdistances[i]);
             }
             List<int> indeksy = new List<int>();
-            for (int i = 0; i < youngerdistances.Count; i++)
+            for (int i = 0; i < distances.Count; i++)
             {
-                if (distances[i].Contains(youngerdistances[i]))
+                if (youngerdistances.Contains(distances[i]))
                 {
                     indeksy.Add(i);
                 }
             }
+            int adder = 0;
+            Console.WriteLine(distances.Count);
+            Console.WriteLine(youngerdistances.Count);
             for (int i = 0; i < distance.Count; i++)
             {
-                
-                if (!String.IsNullOrEmpty(DataChecker.LapChecker(distance[i].InnerText)))
+                if (!String.IsNullOrEmpty(DataChecker.LapChecker(distances[i])))
                 {
-                    if (indeksy.Contains(i) && (DataConversion.ConvertToDouble(youngerTime[i].InnerText) < DataConversion.ConvertToDouble(time[indeksy[i]].InnerText)))
+                    if (!String.IsNullOrEmpty(DataChecker.LapChecker(youngerdistances[adder])))
                     {
-                        addValues += $" (\'{DataConversion.StrokeTranslation(youngerDistance[i].InnerText)}\', \'{DataConversion.ToTitleString(youngerFullName[i].InnerText)}\', \'{youngerTime[i].InnerText}\', \'{DataConversion.DateTranslation(youngerDate[i].InnerText)}\', \'{youngerCity[i].InnerText}\', \'{DataConversion.ConvertToDouble(youngerTime[i].InnerText)}\' ),";
+                        if (distances[i] == youngerdistances[adder])
+                        {
+                            if (DataConversion.ConvertToDouble(youngertimes[adder]) < DataConversion.ConvertToDouble(times[i]))
+                            {
+                                addValues += $" (\'{DataConversion.StrokeTranslation(youngerdistances[adder])}\', \'{DataConversion.ToTitleString(youngerfullnames[adder])}\', \'{youngertimes[adder]}\', \'{DataConversion.DateTranslation(youngerdates[adder])}\', \'{youngercities[adder]}\', \'{DataConversion.ConvertToDouble(youngertimes[adder])}\' ),";
+                            }
+                            adder++;
+                        }
                     }
                     else
                     {
-                        addValues += $" (\'{DataConversion.StrokeTranslation(distance[i].InnerText)}\', \'{DataConversion.ToTitleString(fullname[i].InnerText)}\', \'{time[i].InnerText}\', \'{DataConversion.DateTranslation(date[i].InnerText)}\', \'{city[i].InnerText}\', \'{DataConversion.ConvertToDouble(time[i].InnerText)}\' ),";
+                        addValues += $" (\'{DataConversion.StrokeTranslation(distances[i])}\', \'{DataConversion.ToTitleString(fullnames[i])}\', \'{times[i]}\', \'{DataConversion.DateTranslation(dates[i])}\', \'{cities[i]}\', \'{DataConversion.ConvertToDouble(times[i])}\' ),";
                     }
                 }
             }
