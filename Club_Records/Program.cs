@@ -1,4 +1,4 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using Npgsql;
 using System;
 using System.ComponentModel.Design;
@@ -158,120 +158,30 @@ class HtmlGetter
         htmlDocument.LoadHtml(html);
         return htmlDocument;
     }
-    public static List<string> URL(string url)
-    {
-        var URLlink = Loader(url).DocumentNode.SelectNodes("//td[@class='swimstyle']//a[@href]");
-        List<string> linki = new List<string>();
-        for (int i = 0; i < URLlink.Count; i++)
-        {
-            linki.Add("https://www.swimrankings.net/index.php" + URLlink[i].GetAttributeValue("href", "").Replace("amp;", ""));
-        }
-        return linki;
-    }
     public static string Records(string dystans, int counter)
     {
         string addValues = "";
         var htmlDocument = Loader(dystans);
-        List<string> distances = new List<string>();
-        List<string> fullnames = new List<string>();
-        List<string> times = new List<string>();
-        List<string> dates = new List<string>();
-        List<string> cities = new List<string>();
         var distance = htmlDocument.DocumentNode.SelectNodes("//td[@class='swimstyle']");
         var fullname = htmlDocument.DocumentNode.SelectNodes("//td[@class='fullname']");
         var time = htmlDocument.DocumentNode.SelectNodes("//td[@class='time']");
-        var date = (htmlDocument.DocumentNode.SelectNodes("//td[@class='date']"));
-        var city = (htmlDocument.DocumentNode.SelectNodes("//td[@class='city']"));
+        var date = htmlDocument.DocumentNode.SelectNodes("//td[@class='date']");
+        var city = htmlDocument.DocumentNode.SelectNodes("//td[@class='city']");
         for (int i = 0; i < distance.Count; i++)
         {
-            distances.Add(distance[i].InnerText);
-            fullnames.Add(fullname[i].InnerText);
-            times.Add(time[i].InnerText);
-            dates.Add(date[i].InnerText);
-            cities.Add(city[i].InnerText);
-        }
-        if (counter > 11)
-        {
-            List<string> youngerdistances = new List<string>();
-            List<string> youngerfullnames = new List<string>();
-            List<string> youngertimes = new List<string>();
-            List<string> youngerdates = new List<string>();
-            List<string> youngercities = new List<string>();
-            var youngerhtmlDocument = Loader(YoungerUrl(dystans));
-            Console.WriteLine(YoungerUrl(dystans));
-            var youngerDistance = youngerhtmlDocument.DocumentNode.SelectNodes("//td[@class='swimstyle']");
-            Console.WriteLine(youngerDistance[0].InnerText);
-            var youngerFullName = youngerhtmlDocument.DocumentNode.SelectNodes("//td[@class='fullname']");
-            var youngerTime = youngerhtmlDocument.DocumentNode.SelectNodes("//td[@class='time']");
-            var youngerDate = youngerhtmlDocument.DocumentNode.SelectNodes("//td[@class='date']");
-            var youngerCity = youngerhtmlDocument.DocumentNode.SelectNodes("//td[@class='city']");
-            for (int i = 0; i < youngerDistance.Count; i++)
-            {
-                youngerdistances.Add(youngerDistance[i].InnerText);
-                youngerfullnames.Add(youngerFullName[i].InnerText);
-                youngertimes.Add(youngerTime[i].InnerText);
-                youngerdates.Add(youngerDate[i].InnerText);
-                youngercities.Add(youngerCity[i].InnerText);
-                Console.WriteLine(youngerdistances[i]);
-            }
-            List<int> indeksy = new List<int>();
-            for (int i = 0; i < distances.Count; i++)
-            {
-                if (youngerdistances.Contains(distances[i]))
-                {
-                    indeksy.Add(i);
-                }
-            }
-            int adder = 0;
-            Console.WriteLine(distances.Count);
-            Console.WriteLine(youngerdistances.Count);
-            for (int i = 0; i < distance.Count; i++)
-            {
-                if (!String.IsNullOrEmpty(DataChecker.LapChecker(distances[i])))
-                {
-                    if (!String.IsNullOrEmpty(DataChecker.LapChecker(youngerdistances[adder])))
-                    {
-                        if (distances[i] == youngerdistances[adder])
-                        {
-                            if (DataConversion.ConvertToDouble(youngertimes[adder]) < DataConversion.ConvertToDouble(times[i]))
-                            {
-                                addValues += $" (\'{DataConversion.StrokeTranslation(youngerdistances[adder])}\', \'{DataConversion.ToTitleString(youngerfullnames[adder])}\', \'{youngertimes[adder]}\', \'{DataConversion.DateTranslation(youngerdates[adder])}\', \'{youngercities[adder]}\', \'{DataConversion.ConvertToDouble(youngertimes[adder])}\' ),";
-                            }
-                            adder++;
-                        }
-                    }
-                    else
-                    {
-                        addValues += $" (\'{DataConversion.StrokeTranslation(distances[i])}\', \'{DataConversion.ToTitleString(fullnames[i])}\', \'{times[i]}\', \'{DataConversion.DateTranslation(dates[i])}\', \'{cities[i]}\', \'{DataConversion.ConvertToDouble(times[i])}\' ),";
-                    }
-                }
-            }
-        }
-        else
-        {
-            for (int i = 0; i < distance.Count; i++)
+            try
             {
                 if (!String.IsNullOrEmpty(DataChecker.LapChecker(distance[i].InnerText)))
                 {
-                    addValues += $" (\'{DataConversion.StrokeTranslation(distance[i].InnerText)}\', \'{DataConversion.ToTitleString(fullname[i].InnerText)}\', \'{time[i].InnerText}\', \'{DataConversion.DateTranslation(date[i].InnerText)}\', \'{city[i].InnerText}\', \'{DataConversion.ConvertToDouble(time[i].InnerText)}\' ),";
+                    addValues += $" (\'{DataConversion.StrokeTranslation(distance[i].InnerText)}\', \'{DataConversion.ToTitleString(fullname[i].InnerText)}\', \'{time[i].InnerText}\', \'{DataConversion.DateTranslation(date[i].InnerText)}\', \'{city[i].InnerText.Replace("&nbsp;"," ")}\', \'{DataConversion.ConvertToDouble(time[i].InnerText)}\' ),";
                 }
-            }     
-        }
-        
-        return addValues;
-    }
-    static string YoungerUrl(string dystans)
-    {
-        string[] ageGroup = new string[] { "11", "12012", "13013", "14014", "15015", "16016", "17017", "18018", "19000", "0" };
-        string dystansv2 = "";
-        for (int i = 0; i < ageGroup.Length; i++)
-        {
-            if (dystans.Contains("agegroup=" + ageGroup[i]))
+            }
+            catch
             {
-                dystansv2 = dystans.Replace("agegroup=" + ageGroup[i], "agegroup=" + ageGroup[i - 1]);  
+
             }
         }
-        return dystansv2;
+        return addValues;
     }
 }
 class DataChecker
@@ -287,14 +197,12 @@ class DataChecker
             try
             {
                 HttpResponseMessage response = client.GetAsync(urlForEachDistance).Result;
-
+                Console.WriteLine(response);
                 if (response.IsSuccessStatusCode)
                 {
                     string html = response.Content.ReadAsStringAsync().Result;
                     HtmlDocument document = new HtmlDocument();
                     document.LoadHtml(html);
-
-                    // Tutaj możesz dalej przetwarzać dokument HTML
                     return true;
                 }
                 else
@@ -302,7 +210,7 @@ class DataChecker
                     return false;
                 }
             }
-            catch (HttpRequestException ex)
+            catch
             {
                 return false;
             }
@@ -318,6 +226,22 @@ class SQLConnections
                           " dystans VARCHAR(255), imie VARCHAR(255), czasCzytelny VARCHAR(255), data VARCHAR(255), miasto VARCHAR(255), czas DOUBLE PRECISION  );";
         return createTableQueryTest;
     }
+    public static string CompareQuery(string tablename, int counter, string distance)
+    {
+        string comparator = "UPDATE rekordy_kobiet_12_scm " +
+            "SET " +
+            "imie = r11.imie, " +
+            "czasCzytelny = r11.czasCzytelny, " +
+            "data = r11.data, " +
+            "miasto = r11.miasto, " +
+            "czas = r11.czas " +
+            "FROM rekordy_kobiet_11_scm r11 " +
+            "WHERE " +
+            "rekordy_kobiet_12_scm.dystans = '50m Dowolnym' " +
+            "AND r11.dystans = '50m Dowolnym' " +
+            "AND rekordy_kobiet_12_scm.czas > r11.czas;".Replace("rekordy_kobiet_11_scm", tablename.Replace(tablename.Split("_")[2], $"{counter-1}")).Replace("rekordy_kobiet_12_scm", $"{tablename}").Replace("r12",$"r{counter}").Replace("r11",$"r{counter-1}").Replace("50m Dowolnym",$"{distance}");
+        return comparator;
+    }
     static bool TableExists(NpgsqlConnection connection, string tableName)
     {
         using (NpgsqlCommand command = new NpgsqlCommand())
@@ -329,7 +253,7 @@ class SQLConnections
             return result != null && (bool)result;
         }
     }
-    public static void Connection(string addValuesQuery, string name)
+    public static void Connection(string addValuesQuery, string name, int counter)
     {
         string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=postgres";
         using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
@@ -372,17 +296,16 @@ class MainLoops
     public static void GenderLoop()
     {
         int[] genderloop = [1, 2];
-        string tablename = "Rekordy_";
         for (int i = 0; i < genderloop.Length; i++)
         {
-            tablename += (genderloop[i] == 1) ? "mężczyzn" : "kobiet";
+            string tablename = (genderloop[i] == 1) ? "rekordy_mężczyzn" : "rekordy_kobiet";
             PoolLengthLoop(tablename);
         }
     }
     static void PoolLengthLoop(string tablename)
     {
         string[] length = new string[] { "LCM", "SCM" };
-        for (int i = 0; i < length.Length;i++)
+        for (int i = 0; i < length.Length; i++)
         {
             string pool = (length[i] == "LCM") ? "LCM" : "SCM";
             AgeGroupLoop(pool, tablename);
@@ -401,14 +324,15 @@ class MainLoops
             Console.WriteLine(agegrouprecords);
             DistanceLoop(agegrouprecords, tablename.Replace("_10_letnich_lcm", (counter <= 19) ? $"_{counter}_letnich_{pool}" : $"_20_{pool}"), counter);
             counter++;
-        } 
+        }
     }
     static void DistanceLoop(string urlForEachDistance, string tablename, int counter)
     {
         string addValues = $"INSERT INTO {tablename.ToLower()} (dystans, imie, czasCzytelny, data, miasto, czas) VALUES";
-        addValues += (DataChecker.UrlExists(urlForEachDistance)) ? HtmlGetter.Records(urlForEachDistance, counter) : "";
+        addValues += (DataChecker.UrlExists(urlForEachDistance) == true) ? HtmlGetter.Records(urlForEachDistance, counter) : "";
         addValues = addValues.Remove(addValues.Length - 1);
         addValues += ";";
         Console.WriteLine(addValues);
+        SQLConnections.Connection(addValues, tablename, counter);
     }
 }
