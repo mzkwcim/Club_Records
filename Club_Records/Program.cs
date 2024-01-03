@@ -2,6 +2,7 @@ using HtmlAgilityPack;
 using Npgsql;
 using System;
 using System.ComponentModel.Design;
+using System.Security.Cryptography.X509Certificates;
 using System.Xml.Linq;
 
 MainLoops.GenderLoop();
@@ -108,28 +109,36 @@ class DataConversion
     }
     public static string StrokeTranslation(string distance)
     {
-        string stroke;
-        string[] words = distance.Split(' ');
-        switch (words[1])
+        try
         {
-            case "Freestyle":
-                stroke = words[0] + " Dowolnym";
-                return stroke;
-            case "Backstroke":
-                stroke = words[0] + " Grzbietowym";
-                return stroke;
-            case "Breaststroke":
-                stroke = words[0] + " Klasycznym";
-                return stroke;
-            case "Butterfly":
-                stroke = words[0] + " Motylkowym";
-                return stroke;
-            case "Medley":
-                stroke = words[0] + " Zmiennym";
-                return stroke;
-            default:
-                return "";
+            string stroke;
+            string[] words = distance.Split(' ');
+            switch (words[1])
+            {
+                case "Freestyle":
+                    stroke = words[0] + " Dowolnym";
+                    return stroke;
+                case "Backstroke":
+                    stroke = words[0] + " Grzbietowym";
+                    return stroke;
+                case "Breaststroke":
+                    stroke = words[0] + " Klasycznym";
+                    return stroke;
+                case "Butterfly":
+                    stroke = words[0] + " Motylkowym";
+                    return stroke;
+                case "Medley":
+                    stroke = words[0] + " Zmiennym";
+                    return stroke;
+                default:
+                    return "";
+            }
         }
+        catch
+        {
+            return "";
+        }
+        
     }
     public static string ToTitleString(string fullname)
     {
@@ -158,30 +167,32 @@ class HtmlGetter
         htmlDocument.LoadHtml(html);
         return htmlDocument;
     }
-    public static string Records(string dystans, int counter)
+    public static string Records(string link)
     {
         string addValues = "";
-        var htmlDocument = Loader(dystans);
-        var distance = htmlDocument.DocumentNode.SelectNodes("//td[@class='swimstyle']");
-        var fullname = htmlDocument.DocumentNode.SelectNodes("//td[@class='fullname']");
-        var time = htmlDocument.DocumentNode.SelectNodes("//td[@class='time']");
-        var date = htmlDocument.DocumentNode.SelectNodes("//td[@class='date']");
-        var city = htmlDocument.DocumentNode.SelectNodes("//td[@class='city']");
-        for (int i = 0; i < distance.Count; i++)
+        var htmlDocument = Loader(link);
+        string distance = DataConversion.StrokeTranslation(DataChecker.LapChecker(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='titleCenter']").InnerText));
+        string fullname = DataConversion.ToTitleString(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='fullname']").InnerText);
+        string time = htmlDocument.DocumentNode.SelectSingleNode("//td[@class='time']").InnerText;
+        string date = DataConversion.DateTranslation(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='date']").InnerText);
+        string city = htmlDocument.DocumentNode.SelectSingleNode("//td[@class='city']").InnerText;
+        double convertedtime = DataConversion.ConvertToDouble(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='time']").InnerText);
+        
+        if (!String.IsNullOrEmpty(distance))
         {
-            try
-            {
-                if (!String.IsNullOrEmpty(DataChecker.LapChecker(distance[i].InnerText)))
-                {
-                    addValues += $" (\'{DataConversion.StrokeTranslation(distance[i].InnerText)}\', \'{DataConversion.ToTitleString(fullname[i].InnerText)}\', \'{time[i].InnerText}\', \'{DataConversion.DateTranslation(date[i].InnerText)}\', \'{city[i].InnerText.Replace("&nbsp;"," ")}\', \'{DataConversion.ConvertToDouble(time[i].InnerText)}\' ),";
-                }
-            }
-            catch
-            {
-
-            }
+            return addValues += $" ( \'{distance}\', \'{fullname}\', \'{time}\', \'{date}\', \'{city}\', {convertedtime} ), ";
         }
-        return addValues;
+        return "";
+    }
+    public static string[] URL(string url)
+    {
+        var URLlink = Loader(url).DocumentNode.SelectNodes("//td[@class='swimstyle']//a[@href]");
+        string[] linki = new string[URLlink.Count];
+        for (int i = 0; i < URLlink.Count; i++)
+        {
+            linki[i] = "https://www.swimrankings.net/index.php" + URLlink[i].GetAttributeValue("href", "").Replace("amp;", "");
+        }
+        return linki;
     }
 }
 class DataChecker
@@ -197,7 +208,6 @@ class DataChecker
             try
             {
                 HttpResponseMessage response = client.GetAsync(urlForEachDistance).Result;
-                Console.WriteLine(response);
                 if (response.IsSuccessStatusCode)
                 {
                     string html = response.Content.ReadAsStringAsync().Result;
@@ -216,31 +226,61 @@ class DataChecker
             }
         }
     }
+    
 }
 class SQLConnections
 {
+    public static string Comparator(int counter, string pool, string gender)
+    {
+        string comparator = $"UPDATE rekordy_{gender}_{counter}_letnich_{pool} AS r{counter} " +
+            "SET " +
+            $"imie = r{counter-1}.imie, " +
+            $"czasCzytelny = r{counter-1}.czasCzytelny, " +
+            $"data = r{counter-1}.data, " +
+            $"miasto = r{counter-1}.miasto, " +
+            $"czas = r{counter-1}.czas " +
+            $"FROM rekordy_{gender}_{counter-1}_letnich_{pool} AS r{counter-1} " +
+            "WHERE " +
+            $"r{counter}.dystans = r{counter-1}.dystans " +
+            $"AND r{counter}.czas > r{counter-1}.czas;";
+        Console.WriteLine(comparator);
+        return comparator;
+    }
+    public static void ComparatorConnection(string name, int counter, string pool, string gender)
+    {
+        string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=postgres";
+        using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
+        {
+            try
+            {
+                connection.Open();
+                if (TableExists(connection, name))
+                {
+                    using (NpgsqlCommand command2 = new NpgsqlCommand(Comparator(counter, pool, gender), connection))
+                    {
+                        command2.ExecuteNonQuery();
+                        Console.WriteLine("Powodzenie");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Błąd: {e.Message}");
+            }
+        }
+    }
     public static string CreateTable(string name)
     {
-        string createTableQueryTest = $"CREATE TABLE {name} (" +
+        string createTableQueryTest = $"CREATE TABLE {name} ( " +
                           "ID SERIAL PRIMARY KEY, " +
-                          " dystans VARCHAR(255), imie VARCHAR(255), czasCzytelny VARCHAR(255), data VARCHAR(255), miasto VARCHAR(255), czas DOUBLE PRECISION  );";
+                          "dystans VARCHAR(255) UNIQUE, " +
+                          "imie VARCHAR(255), " +
+                          "czasCzytelny VARCHAR(255), " +
+                          "data VARCHAR(255), " +
+                          "miasto VARCHAR(255), " +
+                          "czas DOUBLE PRECISION  " +
+                          ");";
         return createTableQueryTest;
-    }
-    public static string CompareQuery(string tablename, int counter, string distance)
-    {
-        string comparator = "UPDATE rekordy_kobiet_12_scm " +
-            "SET " +
-            "imie = r11.imie, " +
-            "czasCzytelny = r11.czasCzytelny, " +
-            "data = r11.data, " +
-            "miasto = r11.miasto, " +
-            "czas = r11.czas " +
-            "FROM rekordy_kobiet_11_scm r11 " +
-            "WHERE " +
-            "rekordy_kobiet_12_scm.dystans = '50m Dowolnym' " +
-            "AND r11.dystans = '50m Dowolnym' " +
-            "AND rekordy_kobiet_12_scm.czas > r11.czas;".Replace("rekordy_kobiet_11_scm", tablename.Replace(tablename.Split("_")[2], $"{counter-1}")).Replace("rekordy_kobiet_12_scm", $"{tablename}").Replace("r12",$"r{counter}").Replace("r11",$"r{counter-1}").Replace("50m Dowolnym",$"{distance}");
-        return comparator;
     }
     static bool TableExists(NpgsqlConnection connection, string tableName)
     {
@@ -253,7 +293,7 @@ class SQLConnections
             return result != null && (bool)result;
         }
     }
-    public static void Connection(string addValuesQuery, string name, int counter)
+    public static void Connection(string addValuesQuery, string name)
     {
         string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=postgres";
         using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
@@ -296,6 +336,7 @@ class MainLoops
     public static void GenderLoop()
     {
         int[] genderloop = [1, 2];
+        string[] genderlist = ["mężczyzn", "kobiet"];
         for (int i = 0; i < genderloop.Length; i++)
         {
             string tablename = (genderloop[i] == 1) ? "rekordy_mężczyzn" : "rekordy_kobiet";
@@ -315,24 +356,41 @@ class MainLoops
     {
         string[] ageGroup = new string[] { "11", "12012", "13013", "14014", "15015", "16016", "17017", "18018", "19000", "0" };
         int counter = 11;
+        string gender = tablename.Replace("rekordy_", "");
         tablename += "_10_letnich_lcm";
-        List<string> urlForEachDistance = new List<string>();
         string url = "https://www.swimrankings.net/index.php?page=rankingDetail&clubId=89634&gender=1&season=-1&course=SCM&stroke=0&agegroup=14014";
         for (int i = 0; i < ageGroup.Length; i++)
         {
-            string agegrouprecords = url.Replace("agegroup=14014", "agegroup=" + ageGroup[i]).Replace("course=SCM", "course=" + pool).Replace("gender=1", "gender=" + ((tablename.Contains("mężczyzn")) ? "1" : "2"));
-            Console.WriteLine(agegrouprecords);
-            DistanceLoop(agegrouprecords, tablename.Replace("_10_letnich_lcm", (counter <= 19) ? $"_{counter}_letnich_{pool}" : $"_20_{pool}"), counter);
+            string distanceURL = url.Replace("agegroup=14014", "agegroup=" + ageGroup[i]).Replace("course=SCM", "course=" + pool).Replace("gender=1", "gender=" + ((tablename.Contains("mężczyzn")) ? "1" : "2"));
+            if (DataChecker.UrlExists(distanceURL))
+            {
+                DistanceLoop(distanceURL, tablename.Replace("_10_letnich_lcm", (counter <= 19) ? $"_{counter}_letnich_{pool}" : $"_20_{pool}"), counter, pool, gender);
+            } 
             counter++;
         }
     }
-    static void DistanceLoop(string urlForEachDistance, string tablename, int counter)
+    static void DistanceLoop(string distanceURL, string tablename, int counter, string pool, string gender)
     {
-        string addValues = $"INSERT INTO {tablename.ToLower()} (dystans, imie, czasCzytelny, data, miasto, czas) VALUES";
-        addValues += (DataChecker.UrlExists(urlForEachDistance) == true) ? HtmlGetter.Records(urlForEachDistance, counter) : "";
-        addValues = addValues.Remove(addValues.Length - 1);
-        addValues += ";";
-        Console.WriteLine(addValues);
-        SQLConnections.Connection(addValues, tablename, counter);
+        try
+        {
+            string[] tratatata = HtmlGetter.URL(distanceURL);
+            string addvalues = $"INSERT INTO {tablename} (dystans, imie, czasCzytelny, data, miasto, czas) VALUES ";
+            for (int i = 0; i < tratatata.Length; i++)
+            {
+                addvalues += HtmlGetter.Records(tratatata[i]);
+            }
+            addvalues = addvalues.Substring(0, addvalues.Length - 2);
+            addvalues += ";";
+            Console.WriteLine(addvalues);
+            SQLConnections.Connection(addvalues, tablename);
+            if (counter > 11)
+            {
+                SQLConnections.ComparatorConnection(tablename, counter, pool, gender);
+            }
+        }
+        catch
+        {
+
+        }
     }
 }
