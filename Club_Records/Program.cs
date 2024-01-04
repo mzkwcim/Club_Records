@@ -213,31 +213,6 @@ class DataChecker
     {
         return distance.Contains("Lap") ? "" : distance;
     }
-    public static bool UrlExists(string urlForEachDistance)
-    {
-        using (HttpClient client = new HttpClient())
-        {
-            try
-            {
-                HttpResponseMessage response = client.GetAsync(urlForEachDistance).Result;
-                if (response.IsSuccessStatusCode)
-                {
-                    string html = response.Content.ReadAsStringAsync().Result;
-                    HtmlDocument document = new HtmlDocument();
-                    document.LoadHtml(html);
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            catch
-            {
-                return false;
-            }
-        }
-    }
 }
 class SQLConnections
 {
