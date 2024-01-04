@@ -1,5 +1,6 @@
 using HtmlAgilityPack;
 using Npgsql;
+using System.Text.RegularExpressions;
 using System;
 using System.ComponentModel.Design;
 using System.Security.Cryptography.X509Certificates;
@@ -8,6 +9,11 @@ using System.Xml.Linq;
 MainLoops.GenderLoop();
 class DataConversion
 {
+    public static string TextSanitizer(string text)
+    {
+        string cleanedString = Regex.Replace(text, @"[^0-9:,.]", "");
+        return cleanedString;
+    }
     public static double ConvertToDouble(string doubles)
     {
         string[] list = doubles.Split(':');
@@ -172,15 +178,21 @@ class HtmlGetter
         string addValues = "";
         var htmlDocument = Loader(link);
         string distance = DataConversion.StrokeTranslation(DataChecker.LapChecker(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='titleCenter']").InnerText));
-        string fullname = DataConversion.ToTitleString(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='fullname']").InnerText);
-        string time = htmlDocument.DocumentNode.SelectSingleNode("//td[@class='time']").InnerText;
-        string date = DataConversion.DateTranslation(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='date']").InnerText);
-        string city = htmlDocument.DocumentNode.SelectSingleNode("//td[@class='city']").InnerText;
-        double convertedtime = DataConversion.ConvertToDouble(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='time']").InnerText);
-        
-        if (!String.IsNullOrEmpty(distance))
+        if (distance == "")
         {
-            return addValues += $" ( \'{distance}\', \'{fullname}\', \'{time}\', \'{date}\', \'{city}\', {convertedtime} ), ";
+
+        }
+        else
+        {
+            string fullname = htmlDocument.DocumentNode.SelectSingleNode("//td[@class='fullname']").InnerText;
+            string time = DataConversion.TextSanitizer(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='time']").InnerText);
+            string date = DataConversion.DateTranslation(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='date']").InnerText);
+            string city = htmlDocument.DocumentNode.SelectSingleNode("//td[@class='city']").InnerText;
+            double convertedtime = DataConversion.ConvertToDouble(DataConversion.TextSanitizer(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='time']").InnerText));
+            if (!String.IsNullOrEmpty(distance))
+            {
+                return addValues += $" ( \'{distance}\', \'{fullname}\', \'{time}\', \'{date}\', \'{city}\', {convertedtime} ), ";
+            }
         }
         return "";
     }
@@ -226,10 +238,21 @@ class DataChecker
             }
         }
     }
-    
 }
 class SQLConnections
 {
+    public static string Inserter(string gender, int counter, string pool)
+    {
+        string inserter = $"INSERT INTO rekordy_{gender}_{counter}_letnich_{pool} (dystans, imie, czasczytelny, data, miasto, czas) " +
+            $"SELECT r{counter-1}.dystans, r{counter - 1}.imie, r{counter - 1}.czasczytelny, r{counter - 1}.data, r{counter - 1}.miasto, r{counter - 1}.czas " +
+            $"FROM rekordy_{gender}_{counter - 1}_letnich_{pool} r{counter - 1} " +
+            "WHERE NOT EXISTS ( " +
+            "SELECT 1 " +
+            $"FROM rekordy_{gender}_{counter}_letnich_{pool} r{counter} " +
+            $"WHERE r{counter}.dystans = r{counter - 1}.dystans " +
+            ");";
+        return inserter;
+    }
     public static string Comparator(int counter, string pool, string gender)
     {
         string comparator = $"UPDATE rekordy_{gender}_{counter}_letnich_{pool} AS r{counter} " +
@@ -259,6 +282,11 @@ class SQLConnections
                     using (NpgsqlCommand command2 = new NpgsqlCommand(Comparator(counter, pool, gender), connection))
                     {
                         command2.ExecuteNonQuery();
+                        Console.WriteLine("Powodzenie");
+                    }
+                    using (NpgsqlCommand command3 = new NpgsqlCommand(Inserter(gender, counter, pool), connection))
+                    {
+                        command3.ExecuteNonQuery();
                         Console.WriteLine("Powodzenie");
                     }
                 }
@@ -335,8 +363,7 @@ class MainLoops
 {
     public static void GenderLoop()
     {
-        int[] genderloop = [1, 2];
-        string[] genderlist = ["mężczyzn", "kobiet"];
+        int[] genderloop = [2, 1];
         for (int i = 0; i < genderloop.Length; i++)
         {
             string tablename = (genderloop[i] == 1) ? "rekordy_mężczyzn" : "rekordy_kobiet";
@@ -362,10 +389,8 @@ class MainLoops
         for (int i = 0; i < ageGroup.Length; i++)
         {
             string distanceURL = url.Replace("agegroup=14014", "agegroup=" + ageGroup[i]).Replace("course=SCM", "course=" + pool).Replace("gender=1", "gender=" + ((tablename.Contains("mężczyzn")) ? "1" : "2"));
-            if (DataChecker.UrlExists(distanceURL))
-            {
-                DistanceLoop(distanceURL, tablename.Replace("_10_letnich_lcm", (counter <= 19) ? $"_{counter}_letnich_{pool}" : $"_20_{pool}"), counter, pool, gender);
-            } 
+            Console.WriteLine(distanceURL);
+            DistanceLoop(distanceURL, tablename.Replace("_10_letnich_lcm", (counter <= 19) ? $"_{counter}_letnich_{pool}" : $"_20_letnich_{pool}"), counter, pool, gender);
             counter++;
         }
     }
@@ -374,10 +399,12 @@ class MainLoops
         try
         {
             string[] tratatata = HtmlGetter.URL(distanceURL);
+            HashSet<string> set = new HashSet<string>(tratatata);
+            string[] tabwithoutdups = set.ToArray();
             string addvalues = $"INSERT INTO {tablename} (dystans, imie, czasCzytelny, data, miasto, czas) VALUES ";
-            for (int i = 0; i < tratatata.Length; i++)
+            for (int i = 0; i < tabwithoutdups.Length; i++)
             {
-                addvalues += HtmlGetter.Records(tratatata[i]);
+                addvalues += HtmlGetter.Records(tabwithoutdups[i]);
             }
             addvalues = addvalues.Substring(0, addvalues.Length - 2);
             addvalues += ";";
