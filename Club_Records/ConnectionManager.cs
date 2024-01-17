@@ -22,7 +22,7 @@ namespace Club_Records
         }
         public static void Connection(string addValuesQuery, string name)
         {
-            string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=postgres";
+            string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=club_records";
             using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
                 try
@@ -59,7 +59,7 @@ namespace Club_Records
         }
         public static void ComparatorConnection(string name, int counter, string pool, string gender)
         {
-            string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=postgres";
+            string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=club_records";
             using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
                 try

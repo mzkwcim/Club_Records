@@ -24,7 +24,7 @@ class MainLoops
     }
     static void PoolLengthLoop(string tablename)
     {
-        string[] length = new string[] { "LCM", "SCM" };
+        string[] length = [ "LCM", "SCM" ];
         for (int i = 0; i < length.Length; i++)
         {
             string pool = (length[i] == "LCM") ? "LCM" : "SCM";
@@ -33,11 +33,11 @@ class MainLoops
     }
     static void AgeGroupLoop(string pool, string tablename)
     {
-        string[] ageGroup = new string[] { "11", "12012", "13013", "14014", "15015", "16016", "17017", "18018", "19000", "0" };
+        string[] ageGroup = [ "11", "12012", "13013", "14014", "15015", "16016", "17017", "18018", "19000", "0" ];
         int counter = 11;
         string gender = tablename.Replace("rekordy_", "");
         tablename += "_10_letnich_lcm";
-        string url = "https://www.swimrankings.net/index.php?page=rankingDetail&clubId=89634&gender=1&season=-1&course=SCM&stroke=0&agegroup=14014";
+        string url = "https://www.swimrankings.net/index.php?page=rankingDetail&clubId=86433&gender=1&season=-1&course=SCM&stroke=0&agegroup=14014";
         for (int i = 0; i < ageGroup.Length; i++)
         {
             string distanceURL = url.Replace("agegroup=14014", "agegroup=" + ageGroup[i]).Replace("course=SCM", "course=" + pool).Replace("gender=1", "gender=" + ((tablename.Contains("mężczyzn")) ? "1" : "2"));
@@ -69,7 +69,7 @@ class MainLoops
         }
         catch
         {
-
+            //this try catch block is made intentionally. In case of lack certain age group in a club this block allows program to run further
         }
     }
 }

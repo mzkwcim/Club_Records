@@ -22,23 +22,23 @@ namespace Club_Records
         }
         public static string Comparator(int counter, string pool, string gender)
         {
-            string comparator = $"UPDATE rekordy_{gender}_{counter}_letnich_{pool} AS r{counter} " +
+            string comparator = $"UPDATE rekordy_{gender.ToLower()}_{counter}_letnich_{pool.ToLower()} AS r{counter} " +
                 "SET " +
                 $"imie = r{counter - 1}.imie, " +
                 $"czasCzytelny = r{counter - 1}.czasCzytelny, " +
                 $"data = r{counter - 1}.data, " +
                 $"miasto = r{counter - 1}.miasto, " +
                 $"czas = r{counter - 1}.czas " +
-                $"FROM rekordy_{gender}_{counter - 1}_letnich_{pool} AS r{counter - 1} " +
+                $"FROM rekordy_{gender.ToLower()}_{counter - 1}_letnich_{pool.ToLower()} AS r{counter - 1} " +
                 "WHERE " +
                 $"r{counter}.dystans = r{counter - 1}.dystans " +
                 $"AND r{counter}.czas > r{counter - 1}.czas;";
             Console.WriteLine(comparator);
             return comparator;
         }
-        public static string CreateTable(string name)
+        public static string CreateTable(string tablename)
         {
-            string createTableQueryTest = $"CREATE TABLE {name} ( " +
+            string createTableQueryTest = $"CREATE TABLE {tablename.ToLower()} ( " +
                               "ID SERIAL PRIMARY KEY, " +
                               "dystans VARCHAR(255) UNIQUE, " +
                               "imie VARCHAR(255), " +

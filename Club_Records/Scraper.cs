@@ -22,16 +22,12 @@ namespace Club_Records
             string addValues = "";
             var htmlDocument = Loader(link);
             string distance = DataConversion.StrokeTranslation(DataChecker.LapChecker(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='titleCenter']").InnerText));
-            if (distance == "")
-            {
-
-            }
-            else
+            if (distance != "")
             {
                 string fullname = htmlDocument.DocumentNode.SelectSingleNode("//td[@class='fullname']").InnerText;
                 string time = DataConversion.TextSanitizer(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='time']").InnerText);
                 string date = DataConversion.DateTranslation(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='date']").InnerText);
-                string city = htmlDocument.DocumentNode.SelectSingleNode("//td[@class='city']").InnerText;
+                string city = htmlDocument.DocumentNode.SelectSingleNode("//td[@class='city']").InnerText.Replace("&nbsp;", " ");
                 double convertedtime = DataConversion.ConvertToDouble(DataConversion.TextSanitizer(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='time']").InnerText));
                 if (!String.IsNullOrEmpty(distance))
                 {

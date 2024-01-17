@@ -5,20 +5,20 @@ namespace Club_Records
     internal class DataConversion
     {
         public static string TextSanitizer(string text) => Regex.Replace(text, @"[^0-9:,.]", "");
-        public static double ConvertToDouble(string doubles)
+        public static double ConvertToDouble(string timeStringWithCollons)
         {
-            string[] list = doubles.Split(':');
-            double newer = Math.Round(((list.Length > 1) ? (Convert.ToDouble(list[0]) * 60) + Convert.ToDouble(list[1]) : Convert.ToDouble(list[0])), 2);
-            return newer;
+            string[] list = timeStringWithCollons.Split(':');
+            double timeWithoutCollons = Math.Round(((list.Length > 1) ? (Convert.ToDouble(list[0]) * 60) + Convert.ToDouble(list[1]) : Convert.ToDouble(list[0])), 2);
+            return timeWithoutCollons;
         }
-        public static string DateTranslation(string converter)
+        public static string DateTranslation(string englishDate)
         {
-            string[] words = converter.Split("&nbsp;");
-            return (words.Length == 4) ? $"{words[1]} {GetMonthTranslation(words[2])} {words[3]}" : $"{words[0]} {GetMonthTranslation(words[1])} {words[2]}";
+            string[] partsOfEnglishDate = englishDate.Split("&nbsp;");
+            return (partsOfEnglishDate.Length == 4) ? $"{partsOfEnglishDate[1]} {GetMonthTranslation(partsOfEnglishDate[2])} {partsOfEnglishDate[3]}" : $"{partsOfEnglishDate[0]} {GetMonthTranslation(partsOfEnglishDate[1])} {partsOfEnglishDate[2]}";
         }
-        private static string GetMonthTranslation(string abbreviation)
+        private static string GetMonthTranslation(string partsOfEnglishDate)
         {
-            switch (abbreviation)
+            switch (partsOfEnglishDate)
             {
                 case "Jan": return "Stycznia";
                 case "Feb": return "Lutego";
@@ -35,18 +35,18 @@ namespace Club_Records
                 default: return "";
             }
         }
-        public static string StrokeTranslation(string distance)
+        public static string StrokeTranslation(string englishNamedDistance)
         {
             try
             {
-                string[] words = distance.Split(' ');
-                switch (words[1])
+                string[] partsOfEnglishNamedDistance = englishNamedDistance.Split(' ');
+                switch (partsOfEnglishNamedDistance[1])
                 {
-                    case "Freestyle": return words[0] + " Dowolnym";
-                    case "Backstroke": return words[0] + " Grzbietowym";
-                    case "Breaststroke": return words[0] + " Klasycznym";
-                    case "Butterfly": return words[0] + " Motylkowym";
-                    case "Medley": return words[0] + " Zmiennym";
+                    case "Freestyle": return partsOfEnglishNamedDistance[0] + " Dowolnym";
+                    case "Backstroke": return partsOfEnglishNamedDistance[0] + " Grzbietowym";
+                    case "Breaststroke": return partsOfEnglishNamedDistance[0] + " Klasycznym";
+                    case "Butterfly": return partsOfEnglishNamedDistance[0] + " Motylkowym";
+                    case "Medley": return partsOfEnglishNamedDistance[0] + " Zmiennym";
                     default: return "";
                 }
             }
