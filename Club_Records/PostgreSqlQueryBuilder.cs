@@ -10,8 +10,8 @@ namespace Club_Records
     {
         public static string Inserter(string gender, int counter, string pool)
         {
-            string inserter = $"INSERT INTO rekordy_{gender}_{counter}_letnich_{pool} (dystans, imie, czasczytelny, data, miasto, czas) " +
-                $"SELECT r{counter - 1}.dystans, r{counter - 1}.imie, r{counter - 1}.czasczytelny, r{counter - 1}.data, r{counter - 1}.miasto, r{counter - 1}.czas " +
+            string inserter = $"INSERT INTO rekordy_{gender}_{counter}_letnich_{pool} (dystans, klub, imie, czasczytelny, data, miasto, czas) " +
+                $"SELECT r{counter - 1}.dystans, r{counter - 1}.klub, r{counter - 1}.imie, r{counter - 1}.czasczytelny, r{counter - 1}.data, r{counter - 1}.miasto, r{counter - 1}.czas " +
                 $"FROM rekordy_{gender}_{counter - 1}_letnich_{pool} r{counter - 1} " +
                 "WHERE NOT EXISTS ( " +
                 "SELECT 1 " +
@@ -24,6 +24,7 @@ namespace Club_Records
         {
             string comparator = $"UPDATE rekordy_{gender.ToLower()}_{counter}_letnich_{pool.ToLower()} AS r{counter} " +
                 "SET " +
+                $"klub = r{counter - 1}.klub, " +
                 $"imie = r{counter - 1}.imie, " +
                 $"czasCzytelny = r{counter - 1}.czasCzytelny, " +
                 $"data = r{counter - 1}.data, " +
@@ -33,7 +34,6 @@ namespace Club_Records
                 "WHERE " +
                 $"r{counter}.dystans = r{counter - 1}.dystans " +
                 $"AND r{counter}.czas > r{counter - 1}.czas;";
-            Console.WriteLine(comparator);
             return comparator;
         }
         public static string CreateTable(string tablename)
@@ -41,6 +41,7 @@ namespace Club_Records
             string createTableQueryTest = $"CREATE TABLE {tablename.ToLower()} ( " +
                               "ID SERIAL PRIMARY KEY, " +
                               "dystans VARCHAR(255) UNIQUE, " +
+                              "klub VARCHAR(255), " + 
                               "imie VARCHAR(255), " +
                               "czasCzytelny VARCHAR(255), " +
                               "data VARCHAR(255), " +

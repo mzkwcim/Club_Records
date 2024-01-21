@@ -29,9 +29,10 @@ namespace Club_Records
                 string date = DataConversion.DateTranslation(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='date']").InnerText);
                 string city = htmlDocument.DocumentNode.SelectSingleNode("//td[@class='city']").InnerText.Replace("&nbsp;", " ");
                 double convertedtime = DataConversion.ConvertToDouble(DataConversion.TextSanitizer(htmlDocument.DocumentNode.SelectSingleNode("//td[@class='time']").InnerText));
+                string club = htmlDocument.DocumentNode.SelectSingleNode("//td[@class='name']").InnerText;
                 if (!String.IsNullOrEmpty(distance))
                 {
-                    return addValues += $" ( \'{distance}\', \'{fullname}\', \'{time}\', \'{date}\', \'{city}\', {convertedtime} ), ";
+                    return addValues += $" ( \'{distance}\', \'{club.Replace(".","")}\', \'{DataConversion.ToTitleString(fullname)}\', \'{time}\', \'{date}\', \'{city}\', {convertedtime} ), ";
                 }
             }
             return "";

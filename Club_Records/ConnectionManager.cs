@@ -22,7 +22,7 @@ namespace Club_Records
         }
         public static void Connection(string addValuesQuery, string name)
         {
-            string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=club_records";
+            string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=WOZP";
             using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
                 try
@@ -33,7 +33,7 @@ namespace Club_Records
                         using (NpgsqlCommand command2 = new NpgsqlCommand(addValuesQuery, connection))
                         {
                             command2.ExecuteNonQuery();
-                            Console.WriteLine("Powodzenie");
+                            Console.WriteLine("Tabela już istnieje, dane zostały poprawnie dodane do tabeli");
                         }
                     }
                     else
@@ -42,12 +42,12 @@ namespace Club_Records
                         using (NpgsqlCommand command = new NpgsqlCommand(createTableQuery, connection))
                         {
                             command.ExecuteNonQuery();
-                            Console.WriteLine("Powodzenie");
+                            Console.WriteLine("Tabela została utworzona");
                         }
                         using (NpgsqlCommand command2 = new NpgsqlCommand(addValuesQuery, connection))
                         {
                             command2.ExecuteNonQuery();
-                            Console.WriteLine("Powodzenie");
+                            Console.WriteLine("Dane zostały dodane do tabeli");
                         }
                     }
                 }
@@ -59,7 +59,7 @@ namespace Club_Records
         }
         public static void ComparatorConnection(string name, int counter, string pool, string gender)
         {
-            string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=club_records";
+            string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=WOZP";
             using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
                 try
@@ -70,12 +70,12 @@ namespace Club_Records
                         using (NpgsqlCommand command2 = new NpgsqlCommand(PostgreSqlQueryBuilder.Comparator(counter, pool, gender), connection))
                         {
                             command2.ExecuteNonQuery();
-                            Console.WriteLine("Powodzenie");
+                            Console.WriteLine("Porównanie wyników młodszych zawodników z wynikami starszych zawodników zostało zakończone sukcesem");
                         }
                         using (NpgsqlCommand command3 = new NpgsqlCommand(PostgreSqlQueryBuilder.Inserter(gender, counter, pool), connection))
                         {
                             command3.ExecuteNonQuery();
-                            Console.WriteLine("Powodzenie");
+                            Console.WriteLine("Jeżeli w wynikach starszych grup wiekowych nie było danych co do dystansu to zostały przepisane z tabeli młodszych zaownidków");
                         }
                     }
                 }

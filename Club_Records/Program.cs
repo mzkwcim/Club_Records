@@ -15,7 +15,7 @@ class MainLoops
 {
     public static void GenderLoop()
     {
-        int[] genderloop = [2, 1];
+        int[] genderloop = [1, 2];
         for (int i = 0; i < genderloop.Length; i++)
         {
             string tablename = (genderloop[i] == 1) ? "rekordy_mężczyzn" : "rekordy_kobiet";
@@ -37,11 +37,10 @@ class MainLoops
         int counter = 11;
         string gender = tablename.Replace("rekordy_", "");
         tablename += "_10_letnich_lcm";
-        string url = "https://www.swimrankings.net/index.php?page=rankingDetail&clubId=86433&gender=1&season=-1&course=SCM&stroke=0&agegroup=14014";
+        string url = "https://www.swimrankings.net/index.php?page=rankingDetail&clubId=614&gender=1&season=-1&course=SCM&stroke=0&agegroup=14014";
         for (int i = 0; i < ageGroup.Length; i++)
         {
             string distanceURL = url.Replace("agegroup=14014", "agegroup=" + ageGroup[i]).Replace("course=SCM", "course=" + pool).Replace("gender=1", "gender=" + ((tablename.Contains("mężczyzn")) ? "1" : "2"));
-            Console.WriteLine(distanceURL);
             DistanceLoop(distanceURL, tablename.Replace("_10_letnich_lcm", (counter <= 19) ? $"_{counter}_letnich_{pool}" : $"_20_letnich_{pool}"), counter, pool, gender);
             counter++;
         }
@@ -50,13 +49,13 @@ class MainLoops
     {
         try
         {
-            string[] tratatata = Scraper.URL(distanceURL);
-            HashSet<string> set = new HashSet<string>(tratatata);
-            string[] tabwithoutdups = set.ToArray();
-            string addvalues = $"INSERT INTO {tablename} (dystans, imie, czasCzytelny, data, miasto, czas) VALUES ";
-            for (int i = 0; i < tabwithoutdups.Length; i++)
+            string[] arrayPotentiallyWithDuplicates = Scraper.URL(distanceURL);
+            HashSet<string> set = new HashSet<string>(arrayPotentiallyWithDuplicates);
+            string[] arrayWithoutDuplicates = set.ToArray();
+            string addvalues = $"INSERT INTO {tablename} (dystans, klub,  imie, czasCzytelny, data, miasto, czas) VALUES ";
+            for (int i = 0; i < arrayWithoutDuplicates.Length; i++)
             {
-                addvalues += Scraper.Records(tabwithoutdups[i]);
+                addvalues += Scraper.Records(arrayWithoutDuplicates[i]);
             }
             addvalues = addvalues.Substring(0, addvalues.Length - 2);
             addvalues += ";";
@@ -69,7 +68,7 @@ class MainLoops
         }
         catch
         {
-            //this try catch block is made intentionally. In case of lack certain age group in a club this block allows program to run further
+
         }
     }
 }
