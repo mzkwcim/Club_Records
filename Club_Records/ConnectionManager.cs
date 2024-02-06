@@ -22,7 +22,7 @@ namespace Club_Records
         }
         public static void Connection(string addValuesQuery, string name)
         {
-            string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=club_records";
+            string connectionString = "Host=localhost;Username=postgres;Password=kk;Database=club_records";
             using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
             {
                 try
